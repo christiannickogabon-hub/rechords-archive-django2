@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Message {{ recipient.get_full_name|default:recipient.username }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Accounts</div>
+    <h1>Send a message</h1>
+  </div>
+  <div class="btn-row">
+    <a class="btn btn--quiet" href="{% url 'accounts:user_list' %}">
+      <svg class="icon"><use href="#icon-arrow-left"/></svg>Back to accounts
+    </a>
+  </div>
+</div>
+
+<div class="compose">
+  <form class="card compose-sheet" method="post">
+    {% csrf_token %}
+
+    <div class="compose-to">
+      <span class="compose-label">To</span>
+      {% if recipient.avatar_url %}
+        <img class="avatar avatar-sm" src="{{ recipient.avatar_url }}" alt="">
+      {% else %}
+        <span class="avatar avatar-sm avatar-placeholder">{{ recipient.username|slice:":2"|upper }}</span>
+      {% endif %}
+      <span class="compose-who">
+        <strong>{{ recipient.get_full_name|default:recipient.username }}</strong>
+        <span>{{ recipient.role_label }}{% if recipient.office %} &middot; {{ recipient.office }}{% endif %}</span>
+      </span>
+      {% if recipient.email %}
+        <span class="chip chip--ok">{{ recipient.email }}</span>
+      {% else %}
+        <span class="chip">No email on file</span>
+      {% endif %}
+    </div>
+
+    <div class="compose-fields">
+      {% include "form_field.html" with field=form.subject %}
+      {% include "form_field.html" with field=form.message %}
+
+      <div class="compose-attach">
+        <div class="compose-attach-head">
+          <svg class="icon icon-sm"><use href="#icon-paperclip"/></svg>
+          <strong>Refer to a filed record</strong>
+        </div>
+        {{ form.document }}
+        <p class="helptext">
+          Optional. The record stays exactly as filed — this points at it, nothing is uploaded
+          and nothing is replaced.
+        </p>
+        {{ form.document.errors }}
+      </div>
+    </div>
+
+    <div class="compose-foot">
+      <div class="compose-actions">
+        <a class="btn btn--quiet" href="{% url 'accounts:user_list' %}">
+          <svg class="icon"><use href="#icon-x"/></svg>Cancel
+        </a>
+        <button class="btn" type="submit">
+          <svg class="icon"><use href="#icon-send"/></svg>Send message
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <aside class="card compose-aside">
+    <h2 class="card-title">How it reaches them</h2>
+    <ul class="deliver">
+      <li>
+        <svg class="icon"><use href="#icon-bell"/></svg>
+        <div>
+          <strong>In the archive</strong>
+          <span>Waiting on their bell icon the next time they sign in.</span>
+        </div>
+      </li>
+      <li>
+        <svg class="icon"><use href="#icon-send"/></svg>
+        <div>
+          <strong>By email</strong>
+          <span>
+            {% if recipient.email %}Sent to {{ recipient.email }} as well.
+            {% else %}No address on file, so nothing is emailed.{% endif %}
+          </span>
+        </div>
+      </li>
+      <li>
+        <svg class="icon"><use href="#icon-shield"/></svg>
+        <div>
+          <strong>On the record</strong>
+          <span>Who sent it, to whom and when is written to the audit trail.</span>
+        </div>
+      </li>
+    </ul>
+
+    <dl class="profile-facts compose-facts">
+      <dt>Username</dt><dd>{{ recipient.username }}</dd>
+      <dt>Role</dt><dd>{{ recipient.role_label }}</dd>
+      <dt>Office</dt><dd>{{ recipient.office|default:"—" }}</dd>
+      <dt>Status</dt><dd>{% if recipient.is_active %}Active{% else %}Disabled{% endif %}</dd>
+    </dl>
+  </aside>
+</div>
+{% endblock %}

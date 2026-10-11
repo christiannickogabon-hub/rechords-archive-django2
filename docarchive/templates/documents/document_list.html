@@ -1,45 +1,98 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Search records{% endblock %}
+{% block title %}{% if folder_label %}{{ folder_label }}{% else %}Search records{% endif %}{% endblock %}
 {% block content %}
 <div class="page-head">
+  {% if folder_label %}
+  <div>
+    <div class="eyebrow">Folder</div>
+    <h1>{{ folder_label }}{% if folder_year %} <span class="head-year">s. {{ folder_year }}</span>{% endif %}</h1>
+    {% if folder_year %}
+    <a class="head-clear" href="{% url 'documents:document_folder' folder_code %}">
+      <svg class="icon icon-sm"><use href="#icon-x"/></svg>Show every series year
+    </a>
+    {% endif %}
+  </div>
+  {% else %}
   <div><div class="eyebrow">Registry</div><h1>Search records</h1></div>
+  {% endif %}
   {% if user.is_archive_admin %}
   <div class="btn-row">
     <a class="btn btn--quiet" href="{% url 'documents:export_csv' %}?{{ querystring }}"><svg class="icon"><use href="#icon-download"/></svg>Export these results</a>
-    <a class="btn" href="{% url 'documents:document_create' %}"><svg class="icon"><use href="#icon-file-plus"/></svg>File a document</a>
   </div>
   {% endif %}
 </div>
 
+{% if not folder_label %}
 <form method="get" class="search-panel">
-  <div class="row row--wide" style="margin-bottom:.7rem">
+  <div class="search-bar">
     <div class="field suggest-wrap">
-      {{ form.q.label_tag }}{{ form.q }}
+      {{ form.q }}
       <div class="suggest-dropdown" id="q-suggest"></div>
     </div>
-    <div class="field">{{ form.doc_type.label_tag }}{{ form.doc_type }}</div>
-    <div class="field">{{ form.status.label_tag }}{{ form.status }}</div>
+    <button class="btn" type="submit"><svg class="icon"><use href="#icon-search"/></svg>Search</button>
   </div>
-  <div class="row">
-    <div class="field">{{ form.number.label_tag }}{{ form.number }}</div>
-    <div class="field">{{ form.series_year.label_tag }}{{ form.series_year }}</div>
-    <div class="field">{{ form.date_from.label_tag }}{{ form.date_from }}</div>
-    <div class="field">{{ form.date_to.label_tag }}{{ form.date_to }}</div>
-  </div>
-  <div class="row row--wide">
-    <div class="field">{{ form.office.label_tag }}{{ form.office }}</div>
-    <div class="field" style="align-self:end">
-      <div class="btn-row">
-        <button class="btn" type="submit"><svg class="icon"><use href="#icon-search"/></svg>Search</button>
-        <a class="btn btn--quiet" href="{% url 'documents:document_list' %}">Clear</a>
-      </div>
+
+  <details class="more-filters">
+    <summary>
+      <svg class="icon"><use href="#icon-chevron-down"/></svg>
+      <span class="more-filters-show">More filters</span>
+      <span class="more-filters-hide">Fewer filters</span>
+    </summary>
+    <div class="row row--wide" style="margin-top:.9rem">
+      <div class="field">{{ form.doc_type.label_tag }}{{ form.doc_type }}</div>
+      <div class="field">{{ form.status.label_tag }}{{ form.status }}</div>
+      <div class="field">{{ form.office.label_tag }}{{ form.office }}</div>
     </div>
-  </div>
+    <div class="row">
+      <div class="field">{{ form.number.label_tag }}{{ form.number }}</div>
+      <div class="field">{{ form.series_year.label_tag }}{{ form.series_year }}</div>
+      <div class="field">{{ form.date_from.label_tag }}{{ form.date_from }}</div>
+      <div class="field">{{ form.date_to.label_tag }}{{ form.date_to }}</div>
+    </div>
+    <div class="btn-row" style="margin-top:.2rem">
+      <button class="btn" type="submit"><svg class="icon"><use href="#icon-search"/></svg>Search</button>
+      <a class="btn btn--quiet" href="{% url 'documents:document_list' %}">Clear</a>
+    </div>
+  </details>
   {% if form.errors %}<ul class="errorlist">{% for field, errors in form.errors.items %}{% for e in errors %}<li>{{ e }}</li>{% endfor %}{% endfor %}</ul>{% endif %}
 </form>
+{% endif %}
 
-<p class="eyebrow">{{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }}</p>
+{% if series_folders %}
+<section class="subfolders tone-{{ folder_tone }}">
+  <div class="subfolders-head">
+    <span class="eyebrow">{% if folder_year %}Sub-folders by series year{% else %}Open a series year{% endif %}</span>
+    {% if folder_year %}
+    <a class="head-clear" href="{% url 'documents:document_folder' folder_code %}">
+      <svg class="icon icon-sm"><use href="#icon-x"/></svg>Show the whole folder
+    </a>
+    {% endif %}
+  </div>
+  <div class="subfolder-grid">
+    {% for s in series_folders %}
+    <a class="subfolder{% if folder_year == s.year %} is-open{% endif %}"
+       href="{% url 'documents:document_folder' folder_code %}?year={{ s.year }}"
+       {% if folder_year == s.year %}aria-current="page"{% endif %}>
+      <span class="subfolder-icon"><svg class="icon"><use href="#icon-folders"/></svg></span>
+      <span class="subfolder-name">s. {{ s.year }}</span>
+      <span class="subfolder-count">{{ s.total }} record{{ s.total|pluralize }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if folder_label and not folder_year and series_folders %}
+<p class="helptext subfolders-hint">
+  {{ folder_total }} record{{ folder_total|pluralize }} in this folder. Open a series year to see them.
+</p>
+{% else %}
+
+<p class="eyebrow">
+  {% if folder_year %}s. {{ folder_year }} &middot; {% endif %}{{ page_obj.paginator.count }}
+  {% if folder_label %}record{{ page_obj.paginator.count|pluralize }}{% else %}result{{ page_obj.paginator.count|pluralize }}{% endif %}
+</p>
 
 <table class="registry">
   <thead>
@@ -48,7 +101,7 @@
   <tbody>
   {% for doc in documents %}
     <tr>
-      <td class="ctrl">{{ doc.control_number }}</td>
+      <td class="ctrl"><span class="chip chip--series tone-{{ doc.tone }}">{{ doc.control_number }}</span></td>
       <td class="subject"><a href="{{ doc.get_absolute_url }}">{{ doc.subject }}</a>
         {% if doc.keyword_list %}<div class="helptext">{{ doc.keywords }}</div>{% endif %}</td>
       <td class="ctrl">{{ doc.date_issued|date:"d M Y" }}</td>
@@ -62,9 +115,14 @@
     </tr>
   {% empty %}
     <tr><td colspan="6" class="empty">
+      {% if folder_label %}
+      <h3>No {{ folder_label|lower }} records yet</h3>
+      <p>Documents filed under this type will appear here.</p>
+      {% else %}
       <h3>Nothing matches those filters</h3>
       <p>Try a shorter keyword, or clear the filters and browse the whole registry.</p>
       <a class="btn btn--quiet" href="{% url 'documents:document_list' %}">Clear filters</a>
+      {% endif %}
     </td></tr>
   {% endfor %}
   </tbody>
@@ -77,8 +135,9 @@
   {% if page_obj.has_next %}<a href="?{{ querystring }}&page={{ page_obj.next_page_number }}">Next</a>{% endif %}
 </div>
 {% endif %}
+{% endif %}
 {% endblock %}
-{% block extra_scripts %}
+{% block extra_scripts %}{% if not folder_label %}
 <script>window.SUGGEST_URL = "{% url 'documents:document_suggest' %}";</script>
-<script src="{% static 'js/search-suggest.js' %}" defer></script>
-{% endblock %}
+<script src="{% static 'js/search-suggest.js' %}?v={{ asset_version }}" defer></script>
+{% endif %}{% endblock %}

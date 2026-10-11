@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Folders{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Administrator</div>
+    <h1>Folders</h1>
+  </div>
+  <div class="btn-row">
+    <a class="btn" href="{% url 'documents:folder_create' %}">
+      <svg class="icon"><use href="#icon-plus"/></svg>Add a folder
+    </a>
+  </div>
+</div>
+
+<p class="helptext" style="margin-bottom:1.1rem">
+  Each folder is a series with its own numbering and its own card on the Overview.
+  A folder with nothing in it can be removed outright; one that holds records is
+  hidden instead, so those records keep their control numbers.
+</p>
+
+<table class="registry">
+  <thead>
+    <tr><th>Folder</th><th>Code</th><th>On the control number</th><th class="num">Records</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for folder in folders %}
+    <tr{% if folder.is_hidden %} class="is-hidden-folder"{% endif %}>
+      <td class="subject">
+        <span class="folder-name tone-{{ folder.tone }}">
+          <span class="folder-chip"><svg class="icon icon-sm"><use href="#{{ folder.icon }}"/></svg></span>
+          {{ folder.label }}
+          {% if folder.is_builtin %}<span class="chip">Built in</span>{% endif %}
+          {% if folder.is_hidden %}<span class="chip chip--warn">Hidden</span>{% endif %}
+        </span>
+      </td>
+      <td class="ctrl">{{ folder.code }}</td>
+      <td class="ctrl">{{ folder.long_name }} No. 001, s. {{ folder.created_at|date:"Y" }}</td>
+      <td class="num">{{ folder.document_count }}</td>
+      <td style="white-space:nowrap">
+        <span class="row-actions">
+          <a href="{% url 'documents:folder_edit' folder.pk %}">
+            <svg class="icon icon-sm"><use href="#icon-pencil"/></svg> Edit
+          </a>
+
+          <form method="post" action="{% url 'documents:folder_hide' folder.pk %}" style="display:inline">
+            {% csrf_token %}
+            <button class="btn btn--quiet btn--sm" type="submit">
+              <svg class="icon icon-sm"><use href="#{% if folder.is_hidden %}icon-eye{% else %}icon-eye-off{% endif %}"/></svg>
+              {% if folder.is_hidden %}Put back{% else %}Hide{% endif %}
+            </button>
+          </form>
+
+          {% if folder.can_be_removed %}
+          <form method="post" action="{% url 'documents:folder_delete' folder.pk %}" style="display:inline"
+                onsubmit="return confirm('Remove the {{ folder.label|escapejs }} folder? It is empty, so nothing is lost.');">
+            {% csrf_token %}
+            <button class="btn btn--danger btn--sm" type="submit">
+              <svg class="icon icon-sm"><use href="#icon-trash-2"/></svg>Delete
+            </button>
+          </form>
+          {% else %}
+          <span class="helptext folder-locked" title="{{ folder.removal_blocked_reason }}">
+            <svg class="icon icon-sm"><use href="#icon-lock"/></svg>{{ folder.document_count }} on file
+          </span>
+          {% endif %}
+        </span>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="empty"><h3>No folders yet</h3><p>Add one to start a series.</p></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

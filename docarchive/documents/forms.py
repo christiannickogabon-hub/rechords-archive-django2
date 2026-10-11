@@ -4,10 +4,15 @@ from django import forms
 from django.conf import settings
 
 from .importing.common import validate_upload_file
-from .models import Attachment, Document, DocumentType
+from .models import (Attachment, Document, DocumentFolder, DocumentType,
+                     folder_choices)
 
 
 class DocumentForm(forms.ModelForm):
+    remove_file = forms.BooleanField(
+        required=False, label="Remove the attached file",
+    )
+
     class Meta:
         model = Document
         fields = [
@@ -24,12 +29,22 @@ class DocumentForm(forms.ModelForm):
             "effectivity_date": forms.DateInput(attrs={"type": "date"}),
             "subject": forms.TextInput(attrs={"placeholder": "Subject line as written on the document"}),
             "keywords": forms.TextInput(attrs={"placeholder": "budget, travel order, 2026"}),
+            "physical_location": forms.TextInput(attrs={"placeholder": "Cabinet 3, Drawer B"}),
+            # The stock clearable widget prints the whole storage path; the template
+            # shows the current file and a tidy "remove" checkbox instead.
+            "file": forms.FileInput,
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["related_to"].queryset = Document.objects.filter(is_deleted=False)
+        # the folders an administrator has opened, not a frozen list
+        self.fields["doc_type"] = forms.ChoiceField(
+            label="Document type", choices=folder_choices(),
+        )
         self.fields["number"].required = False
+        if not self.instance.pk or not self.instance.file:
+            self.fields.pop("remove_file")
         if not self.instance.pk:
             self.fields["number"].help_text = (
                 "Leave blank and the next number in this series is assigned on save."
@@ -57,7 +72,7 @@ class DocumentForm(forms.ModelForm):
         year = cleaned.get("series_year")
 
         if doc_type == DocumentType.INDORSEMENT and not cleaned.get("indorsement_level"):
-            self.add_error("indorsement_level", "Say which indorsement this is: 1, 2, 3 …")
+            self.add_error("indorsement_level", "Say which endorsement this is: 1, 2, 3 …")
         if doc_type != DocumentType.INDORSEMENT:
             cleaned["indorsement_level"] = None
 
@@ -76,6 +91,14 @@ class DocumentForm(forms.ModelForm):
             self.add_error("related_to", "A document cannot refer to itself.")
         return cleaned
 
+    def save(self, commit=True):
+        document = super().save(commit=False)
+        if self.cleaned_data.get("remove_file") and not self.cleaned_data.get("file"):
+            document.file = None
+        if commit:
+            document.save()
+        return document
+
 
 class AttachmentForm(forms.ModelForm):
     class Meta:
@@ -90,6 +113,49 @@ class AttachmentForm(forms.ModelForm):
         return upload
 
 
+class DocumentFolderForm(forms.ModelForm):
+    """Opens a new series. The code is what gets stored on every record filed
+    under it, so it can only be set once."""
+
+    class Meta:
+        model = DocumentFolder
+        fields = ["label", "code", "long_name", "icon", "tone"]
+        widgets = {
+            "label": forms.TextInput(attrs={"placeholder": "e.g. Resolution"}),
+            "code": forms.TextInput(attrs={"placeholder": "e.g. RES", "maxlength": 8}),
+            "long_name": forms.TextInput(attrs={"placeholder": "e.g. RESOLUTION"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["long_name"].required = False
+        if self.instance.pk:
+            self.fields["code"].disabled = True
+            self.fields["code"].help_text = (
+                "The code is fixed once records are filed under the folder."
+            )
+
+    def clean_code(self):
+        code = (self.cleaned_data.get("code") or "").strip().upper()
+        if self.instance.pk:
+            return self.instance.code
+        if not code.isalnum():
+            raise forms.ValidationError("Use letters and digits only, e.g. RES.")
+        if DocumentFolder.objects.filter(code=code).exists():
+            raise forms.ValidationError("A folder already uses that code.")
+        return code
+
+    def clean_label(self):
+        label = self.cleaned_data["label"].strip()
+        clash = DocumentFolder.objects.filter(label__iexact=label).exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise forms.ValidationError("A folder already goes by that name.")
+        return label
+
+    def clean_long_name(self):
+        return (self.cleaned_data.get("long_name") or "").strip().upper()
+
+
 class DocumentSearchForm(forms.Form):
     """Every field is optional; blanks are ignored."""
 
@@ -100,10 +166,7 @@ class DocumentSearchForm(forms.Form):
             "autofocus": True, "autocomplete": "off",
         }),
     )
-    doc_type = forms.ChoiceField(
-        required=False, label="Type",
-        choices=[("", "All types")] + list(DocumentType.choices),
-    )
+    doc_type = forms.ChoiceField(required=False, label="Type", choices=[])
     number = forms.IntegerField(required=False, min_value=1, label="No.")
     series_year = forms.IntegerField(required=False, min_value=1900, label="Series")
     status = forms.ChoiceField(
@@ -117,6 +180,10 @@ class DocumentSearchForm(forms.Form):
     date_to = forms.DateField(
         required=False, label="Issued to", widget=forms.DateInput(attrs={"type": "date"})
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["doc_type"].choices = [("", "All types")] + folder_choices()
 
     def clean(self):
         cleaned = super().clean()

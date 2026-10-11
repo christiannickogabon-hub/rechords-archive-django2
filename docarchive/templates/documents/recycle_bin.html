@@ -1,21 +1,70 @@
 {% extends "base.html" %}
-{% block title %}Bin{% endblock %}
+{% block title %}Recycle Bin{% endblock %}
 {% block content %}
-<div class="page-head"><div><div class="eyebrow">Administrator</div><h1>Bin</h1></div></div>
-<p class="helptext">Removed records keep their control numbers. Restore one to put it back in search.</p>
+<div class="page-head">
+  <div><div class="eyebrow">Administrator</div><h1>Recycle Bin</h1></div>
+</div>
+<p class="helptext" style="margin-bottom:1.1rem">
+  Removed records keep their control numbers and can be restored. After {{ retention_days }} days they become
+  due for disposal — only a super administrator can then destroy them, and that cannot be undone.
+</p>
+
+{% if due_count and user.is_super_admin %}
+<div class="alert alert--warn" style="margin-bottom:1.1rem">
+  <svg class="icon"><use href="#icon-archive"/></svg>
+  <div>
+    <strong>{{ due_count }} record{{ due_count|pluralize }} due for disposal</strong>
+    <p>They have been in the bin for {{ retention_days }} days or more. Review each one before approving.</p>
+  </div>
+</div>
+{% endif %}
+
 <table class="registry">
-  <thead><tr><th>Control number</th><th>Subject</th><th>Removed</th><th></th></tr></thead>
+  <thead>
+    <tr><th>Control number</th><th>Subject</th><th>Removed</th><th>Status</th><th></th></tr>
+  </thead>
   <tbody>
   {% for doc in documents %}
     <tr>
       <td class="ctrl">{{ doc.control_number }}</td>
       <td class="subject">{{ doc.subject }}</td>
       <td class="ctrl">{{ doc.deleted_at|date:"d M Y, H:i" }}</td>
-      <td><a href="{% url 'documents:document_restore' doc.pk %}"><svg class="icon icon-sm"><use href="#icon-arrow-right"/></svg> Restore</a></td>
+      <td>
+        {% if doc.due_for_disposal %}
+          <span class="chip chip--stop">Due for disposal</span>
+        {% else %}
+          <span class="chip">{{ doc.days_until_disposal }} day{{ doc.days_until_disposal|pluralize }} left</span>
+        {% endif %}
+      </td>
+      <td style="white-space:nowrap">
+        <span class="row-actions">
+          <a class="btn btn--restore" href="{% url 'documents:document_restore' doc.pk %}"
+             title="Put {{ doc.control_number }} back in the registry">
+            Restore
+          </a>
+        {% if doc.due_for_disposal and user.is_super_admin %}
+        <form method="post" action="{% url 'documents:document_dispose' doc.pk %}" style="display:inline"
+              onsubmit="return confirm('Permanently destroy {{ doc.control_number|escapejs }} and its file? This cannot be undone.');">
+          {% csrf_token %}
+          <button class="btn btn--danger" type="submit">
+            <svg class="icon icon-sm"><use href="#icon-trash-2"/></svg>Dispose
+          </button>
+        </form>
+        {% endif %}
+        </span>
+      </td>
     </tr>
   {% empty %}
-    <tr><td colspan="4" class="empty"><h3>The bin is empty</h3><p>Nothing has been removed from the registry.</p></td></tr>
+    <tr><td colspan="5" class="empty"><h3>The bin is empty</h3><p>Nothing has been removed from the registry.</p></td></tr>
   {% endfor %}
   </tbody>
 </table>
+
+{% if is_paginated %}
+<div class="pager">
+  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  <span class="ctrl">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

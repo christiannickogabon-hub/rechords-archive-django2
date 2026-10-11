@@ -2,8 +2,10 @@
 {% block title %}Accounts{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><div class="eyebrow">Administrator</div><h1>Accounts</h1></div>
-  <a class="btn" href="{% url 'accounts:user_create' %}"><svg class="icon"><use href="#icon-users"/></svg>Add an account</a>
+  <div><div class="eyebrow">{{ user.role_label }}</div><h1>Accounts</h1></div>
+  {% if user.is_super_admin %}
+  <a class="btn" href="{% url 'accounts:user_create' %}"><svg class="icon"><use href="#icon-plus"/></svg>Add an account</a>
+  {% endif %}
 </div>
 
 <form method="get" class="search-panel">
@@ -21,12 +23,21 @@
     <tr>
       <td class="subject">{{ u.get_full_name|default:"—" }}</td>
       <td class="ctrl">{{ u.username }}</td>
-      <td>{% if u.is_archive_admin %}<span class="chip chip--stop">Administrator</span>{% else %}<span class="chip">Staff user</span>{% endif %}</td>
+      <td>{% if u.is_super_admin %}<span class="chip chip--warn">Super administrator</span>{% elif u.is_archive_admin %}<span class="chip chip--stop">Administrator</span>{% else %}<span class="chip">Staff user</span>{% endif %}</td>
       <td>{{ u.office|default:"—" }}</td>
       <td>{% if u.is_active %}<span class="chip chip--ok">Active</span>{% else %}<span class="chip">Disabled</span>{% endif %}</td>
       <td style="white-space:nowrap">
-        <a href="{% url 'accounts:user_update' u.pk %}"><svg class="icon icon-sm"><use href="#icon-edit"/></svg> Edit</a> ·
-        <a href="{% url 'accounts:user_password' u.pk %}"><svg class="icon icon-sm"><use href="#icon-lock"/></svg> Reset password</a>
+        <span class="row-actions">
+          {% if u != user and u.is_active %}
+          <a class="btn btn--quiet btn--sm" href="{% url 'accounts:user_message' u.pk %}">
+            <svg class="icon icon-sm"><use href="#icon-send"/></svg>Message
+          </a>
+          {% endif %}
+          {% if user.is_super_admin %}
+          <a href="{% url 'accounts:user_update' u.pk %}"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg> Edit</a>
+          <a href="{% url 'accounts:user_password' u.pk %}"><svg class="icon icon-sm"><use href="#icon-lock"/></svg> Reset password</a>
+          {% endif %}
+        </span>
       </td>
     </tr>
   {% empty %}

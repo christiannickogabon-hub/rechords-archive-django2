@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Notify {{ office.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Directory</div><h1>Notify {{ office.name }}</h1></div></div>
+
+<div class="detail-grid">
+  <div class="card">
+    <h2 class="card-title">Message</h2>
+    <p class="card-note">Only the members of {{ office.name }} will receive this.</p>
+    <form method="post">{% csrf_token %}
+      {% for field in form %}{% include "form_field.html" %}{% endfor %}
+      <div class="btn-row" style="margin-top:1rem">
+        <button class="btn" type="submit"><svg class="icon"><use href="#icon-bell"/></svg>Send notification</button>
+        <a class="btn btn--quiet" href="{% url 'accounts:office_list' %}"><svg class="icon"><use href="#icon-x"/></svg>Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Recipients</h2>
+    <p class="card-note">{{ recipients|length }} active member{{ recipients|length|pluralize }}.</p>
+    {% for member in recipients %}
+      <div class="enclosure-row">
+        <div class="dl-link" style="cursor:default">
+          <svg class="icon icon-sm"><use href="#icon-circle-user"/></svg>
+          <span>{{ member.get_full_name|default:member.username }}{% if member == user %} (you — skipped){% endif %}</span>
+        </div>
+      </div>
+    {% empty %}
+      <p class="helptext">Nobody is assigned to this office yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

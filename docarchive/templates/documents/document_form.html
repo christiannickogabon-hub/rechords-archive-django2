@@ -1,66 +1,85 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ heading }}{% endblock %}
 {% block content %}
 <div class="page-head"><div><div class="eyebrow">Administrator</div><h1>{{ heading }}</h1></div></div>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" class="doc-form" id="document-form">
   {% csrf_token %}
-  <div class="detail-grid">
-    <div>
-      <div class="card">
-        <div class="eyebrow">Control number</div>
-        <div class="grid grid-2" style="margin-top:.6rem">
+  {% if form.non_field_errors %}
+    <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <div class="doc-form-grid">
+    <div class="doc-form-main">
+      <section class="card">
+        <h2 class="card-title">Control number</h2>
+        <p class="card-note">Identifies the record in the registry series.</p>
+        <div class="grid grid-2">
           <div>{% with field=form.doc_type %}{% include "form_field.html" %}{% endwith %}</div>
           <div>{% with field=form.series_year %}{% include "form_field.html" %}{% endwith %}</div>
-        </div>
-        <div class="grid grid-2">
           <div>{% with field=form.number %}{% include "form_field.html" %}{% endwith %}</div>
-          <div>{% with field=form.indorsement_level %}{% include "form_field.html" %}{% endwith %}</div>
+          <div id="endorsement-level">{% with field=form.indorsement_level %}{% include "form_field.html" %}{% endwith %}</div>
         </div>
-      </div>
+      </section>
 
-      <div class="card" style="margin-top:1rem">
-        <div class="eyebrow">The document</div>
-        <div style="margin-top:.6rem">
-          {% with field=form.subject %}{% include "form_field.html" %}{% endwith %}
-          {% with field=form.description %}{% include "form_field.html" %}{% endwith %}
-        </div>
+      <section class="card">
+        <h2 class="card-title">The document</h2>
+        {% with field=form.subject %}{% include "form_field.html" %}{% endwith %}
+        {% with field=form.description %}{% include "form_field.html" %}{% endwith %}
         <div class="grid grid-2">
           <div>{% with field=form.date_issued %}{% include "form_field.html" %}{% endwith %}</div>
           <div>{% with field=form.effectivity_date %}{% include "form_field.html" %}{% endwith %}</div>
         </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Origin and routing</h2>
         <div class="grid grid-2">
           <div>{% with field=form.originating_office %}{% include "form_field.html" %}{% endwith %}</div>
           <div>{% with field=form.signatory %}{% include "form_field.html" %}{% endwith %}</div>
         </div>
         {% with field=form.addressee %}{% include "form_field.html" %}{% endwith %}
-        {% with field=form.keywords %}{% include "form_field.html" %}{% endwith %}
         {% with field=form.related_to %}{% include "form_field.html" %}{% endwith %}
-      </div>
+        {% with field=form.keywords %}{% include "form_field.html" %}{% endwith %}
+      </section>
     </div>
 
-    <div>
-      <div class="card">
-        <div class="eyebrow">Filing</div>
-        <div style="margin-top:.6rem">
-          {% with field=form.status %}{% include "form_field.html" %}{% endwith %}
-          {% with field=form.classification %}{% include "form_field.html" %}{% endwith %}
-          {% with field=form.physical_location %}{% include "form_field.html" %}{% endwith %}
-        </div>
-      </div>
+    <aside class="doc-form-side">
+      <section class="card">
+        <h2 class="card-title">Filing</h2>
+        {% with field=form.status %}{% include "form_field.html" %}{% endwith %}
+        {% with field=form.classification %}{% include "form_field.html" %}{% endwith %}
+        {% with field=form.physical_location %}{% include "form_field.html" %}{% endwith %}
+      </section>
 
-      <div class="card" style="margin-top:1rem">
-        <div class="eyebrow">Scanned copy</div>
-        <div style="margin-top:.6rem">
-          {% with field=form.file %}{% include "form_field.html" %}{% endwith %}
-        </div>
-      </div>
+      <section class="card">
+        <h2 class="card-title">Scanned copy</h2>
+        {% if object.file %}
+          <div class="file-current">
+            <svg class="icon"><use href="#icon-file-text"/></svg>
+            <div>
+              <a href="{% url 'documents:document_download' object.pk %}">{{ object.file_extension|default:"File" }} on file</a>
+              <div class="helptext">Downloads carry the certified true copy stamp.</div>
+            </div>
+          </div>
+          {% with field=form.remove_file %}{% include "form_field.html" %}{% endwith %}
+          <label class="file-replace-label" for="{{ form.file.id_for_label }}">Replace with a new file</label>
+        {% endif %}
+        {{ form.file }}
+        {% if form.file.help_text %}<div class="helptext">{{ form.file.help_text }}</div>{% endif %}
+        {{ form.file.errors }}
+        <p class="card-note">PDF, DOC, DOCX, JPG, PNG or TIFF, up to 25 MB.</p>
+      </section>
+    </aside>
+  </div>
 
-      <div class="btn-row" style="margin-top:1rem">
-        <button class="btn" type="submit"><svg class="icon"><use href="#icon-check"/></svg>{% if object %}Save changes{% else %}File document{% endif %}</button>
-        <a class="btn btn--quiet" href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'documents:document_list' %}{% endif %}"><svg class="icon"><use href="#icon-x"/></svg>Cancel</a>
-      </div>
-    </div>
+  <div class="form-actions">
+    <button class="btn" type="submit"><svg class="icon"><use href="#icon-check"/></svg>{% if object %}Save changes{% else %}File document{% endif %}</button>
+    <a class="btn btn--quiet" href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'documents:document_list' %}{% endif %}"><svg class="icon"><use href="#icon-x"/></svg>Cancel</a>
   </div>
 </form>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/document-form.js' %}?v={{ asset_version }}" defer></script>
 {% endblock %}

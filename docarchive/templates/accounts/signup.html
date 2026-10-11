@@ -1,0 +1,90 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Request an account — Municipality of Carigara</title>
+<link rel="icon" type="image/png" href="{% static 'images/carigara-seal.png' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ asset_version }}">
+</head>
+<body class="auth-body">
+{% include "_icons.html" %}
+<div class="auth-spinner" hidden aria-live="polite" aria-label="Sending request">
+  <span class="auth-spinner-ring"></span>
+</div>
+
+<div class="signin">
+  <div class="split split--register">
+    <aside class="brand">
+      <img class="seal" src="{% static 'images/carigara-seal.png' %}" alt="Municipality of Carigara seal">
+      <div>
+        <h2>Municipality of Carigara</h2>
+        <p>Province of Leyte<br>Document Archiving System</p>
+      </div>
+      <ol class="brand-steps">
+        <li><span>1</span> Fill in your details</li>
+        <li><span>2</span> A super administrator reviews it</li>
+        <li><span>3</span> You are notified, then you can sign in</li>
+      </ol>
+      <p class="brand-note">Already registered? <a href="{% url 'accounts:login' %}">Sign in instead</a></p>
+    </aside>
+
+    <div class="panel">
+      <div class="mark">
+        Request an account
+        <span>Accounts are approved by hand, so give details your office will recognise.</span>
+      </div>
+
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      <form method="post" class="register-form">
+        {% csrf_token %}
+
+        <p class="form-legend">Who you are</p>
+        <div class="grid grid-2">
+          <div>{% with field=form.first_name %}{% include "form_field.html" %}{% endwith %}</div>
+          <div>{% with field=form.last_name %}{% include "form_field.html" %}{% endwith %}</div>
+        </div>
+        <div class="grid grid-2">
+          <div>{% with field=form.username %}{% include "form_field.html" %}{% endwith %}</div>
+          <div>{% with field=form.email %}{% include "form_field.html" %}{% endwith %}</div>
+        </div>
+
+        <p class="form-legend">Where you work</p>
+        <div class="grid grid-2">
+          <div>{% with field=form.office %}{% include "form_field.html" %}{% endwith %}</div>
+          <div>{% with field=form.position %}{% include "form_field.html" %}{% endwith %}</div>
+        </div>
+        {% with field=form.contact_number %}{% include "form_field.html" %}{% endwith %}
+
+        <p class="form-legend">Access you need</p>
+        {% with field=form.requested_role %}{% include "form_field.html" %}{% endwith %}
+        <div class="grid grid-2">
+          <div>{% with field=form.password1 %}{% include "form_field.html" %}{% endwith %}</div>
+          <div>{% with field=form.password2 %}{% include "form_field.html" %}{% endwith %}</div>
+        </div>
+
+        <div class="signup-actions">
+          <button class="btn btn--slide" type="submit">
+            <span>Send request</span>
+            <svg class="icon"><use href="#icon-arrow-right"/></svg>
+          </button>
+          <a class="btn btn--cancel" href="{% url 'accounts:login' %}">
+            <svg class="icon"><use href="#icon-x"/></svg>Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/password-toggle.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/ph-contact.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/login-transition.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/loading.js' %}?v={{ asset_version }}" defer></script>
+</body>
+</html>

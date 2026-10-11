@@ -35,6 +35,8 @@ DOC_TYPE_ALIASES = {}
 for _code, _label in DocumentType.choices:
     DOC_TYPE_ALIASES[_code.lower()] = _code
     DOC_TYPE_ALIASES[_label.lower()] = _code
+# Older spreadsheets use the former spelling.
+DOC_TYPE_ALIASES["indorsement"] = DocumentType.INDORSEMENT
 
 _SLASH_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
 _ISO_DATE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
@@ -146,7 +148,7 @@ def _validate_row(result, *, existing_keys, seen_in_batch, date_format):
         if not doc_type:
             result.add_error(
                 f"'{doc_type_raw}' isn't a recognized document type. Use MEMO, IND, OO, EO, "
-                "or the full name (Memorandum, Indorsement, Office Order, Executive Order)."
+                "or the full name (Memorandum, Endorsement, Office Order, Executive Order)."
             )
     parsed["doc_type"] = doc_type
 
@@ -241,7 +243,7 @@ def _validate_row(result, *, existing_keys, seen_in_batch, date_format):
     indorsement_level = None
     if doc_type == DocumentType.INDORSEMENT:
         if not level_raw:
-            result.add_error("indorsement_level is required for indorsements.")
+            result.add_error("indorsement_level is required for endorsements.")
         else:
             try:
                 indorsement_level = int(level_raw)

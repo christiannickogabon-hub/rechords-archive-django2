@@ -53,6 +53,8 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "accounts.context_processors.notifications",
+                "accounts.context_processors.pending_account_requests",
+                "documents.context.asset_version",
             ],
         },
     },
@@ -97,6 +99,26 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Manila"
 USE_I18N = True
 USE_TZ = True
+
+# Word files must pass through an office suite before they can be stamped.
+# Leave blank and LibreOffice is looked for in the usual places; set it to the
+# full path of soffice.exe to be explicit.
+DOC_TO_PDF_COMMAND = os.getenv("DOC_TO_PDF_COMMAND", "")
+
+# Documents stay in the Recycle Bin this long before they are offered for disposal.
+# Nothing is ever destroyed automatically: a super administrator must approve it.
+RECYCLE_BIN_RETENTION_DAYS = int(os.getenv("RECYCLE_BIN_RETENTION_DAYS", "30"))
+
+# Brevo sends the one-time sign-in codes for super administrators.
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "")
+BREVO_SENDER_NAME = os.getenv("BREVO_SENDER_NAME", "Municipality of Carigara Document Archive")
+
+# Bumped whenever app.css changes, so browsers never serve a stale stylesheet.
+try:
+    ASSET_VERSION = int((BASE_DIR / "static" / "css" / "app.css").stat().st_mtime)
+except OSError:
+    ASSET_VERSION = 0
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]

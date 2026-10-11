@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Audit trail{% endblock %}
 {% block content %}
-<div class="page-head"><div><div class="eyebrow">Administrator</div><h1>Audit trail</h1></div></div>
+<div class="page-head"><div><div class="eyebrow">Super administrator</div><h1>Audit trail</h1></div></div>
 <p class="helptext">Every sign-in, search, view, download and edit. Entries cannot be changed or deleted.</p>
 
 <form method="get" class="search-panel">
@@ -22,7 +22,7 @@
 </form>
 
 <table class="registry">
-  <thead><tr><th>When</th><th>User</th><th>Action</th><th>Document</th><th>Note</th><th>IP</th></tr></thead>
+  <thead><tr><th>When</th><th>User</th><th>Action</th><th>Document</th><th>Device</th></tr></thead>
   <tbody>
   {% for entry in entries %}
     <tr>
@@ -30,11 +30,10 @@
       <td>{{ entry.user|default:"—" }}</td>
       <td><span class="chip">{{ entry.get_action_display }}</span></td>
       <td class="ctrl">{% if entry.document %}<a href="{{ entry.document.get_absolute_url }}">{{ entry.document.short_number }}</a>{% else %}—{% endif %}</td>
-      <td class="helptext">{{ entry.note|default:"" }}</td>
-      <td class="ctrl">{{ entry.ip_address|default:"—" }}</td>
+      <td class="ctrl">{{ entry.device_label }}</td>
     </tr>
   {% empty %}
-    <tr><td colspan="6" class="empty"><h3>No entries match</h3><p>Clear the filters to see the full trail.</p></td></tr>
+    <tr><td colspan="5" class="empty"><h3>No entries match</h3><p>Clear the filters to see the full trail.</p></td></tr>
   {% endfor %}
   </tbody>
 </table>

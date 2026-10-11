@@ -1,6 +1,8 @@
 <div class="field">
-  {{ field.label_tag }}
-  {% if field.field.widget.input_type == "password" %}
+  {% if field.field.widget.input_type == "checkbox" %}
+    <label class="check">{{ field }}<span>{{ field.label }}</span></label>
+  {% elif field.field.widget.input_type == "password" %}
+    {{ field.label_tag }}
     <div class="password-field">
       {{ field }}
       <button type="button" class="password-toggle" aria-label="Show password">
@@ -9,6 +11,7 @@
       </button>
     </div>
   {% else %}
+    {{ field.label_tag }}
     {{ field }}
   {% endif %}
   {% if field.help_text %}<div class="helptext">{{ field.help_text }}</div>{% endif %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Offices and divisions{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow">Directory</div><h1>Offices and divisions</h1></div>
+  {% if user.is_archive_admin %}
+  <a class="btn" href="{% url 'accounts:office_create' %}"><svg class="icon"><use href="#icon-plus"/></svg>Add an office</a>
+  {% endif %}
+</div>
+<p class="helptext" style="margin-bottom:1.1rem">
+  {% if user.can_view_accounts %}Select an office to send a notification to its members only.
+  {% else %}Every office of the municipal hall and how many staff belong to each.{% endif %}
+</p>
+
+<table class="registry">
+  <thead>
+    <tr><th>Office or division</th><th>Members</th><th>Status</th>{% if user.can_view_accounts %}<th></th>{% endif %}</tr>
+  </thead>
+  <tbody>
+  {% for office in offices %}
+    <tr>
+      <td class="subject">
+        {{ office.name }}
+        {% if office.description %}<div class="helptext">{{ office.description }}</div>{% endif %}
+      </td>
+      <td class="ctrl">{{ office.member_count }}</td>
+      <td>{% if office.is_active %}<span class="chip chip--ok">Active</span>{% else %}<span class="chip">Inactive</span>{% endif %}</td>
+      {% if user.can_view_accounts %}
+      <td style="white-space:nowrap">
+        <a class="btn btn--quiet" href="{% url 'accounts:office_notify' office.pk %}"><svg class="icon icon-sm"><use href="#icon-bell"/></svg>Notify</a>
+        {% if user.is_archive_admin %}
+        <a class="btn btn--edit btn--slide" href="{% url 'accounts:office_update' office.pk %}"><span>Edit</span><svg class="icon icon-sm"><use href="#icon-pencil"/></svg></a>
+        {% endif %}
+      </td>
+      {% endif %}
+    </tr>
+  {% empty %}
+    <tr><td colspan="4" class="empty">
+      <h3>No offices yet</h3>
+      <p>Offices appear here once they are added.</p>
+      {% if user.is_archive_admin %}<a class="btn" href="{% url 'accounts:office_create' %}"><svg class="icon"><use href="#icon-plus"/></svg>Add an office</a>{% endif %}
+    </td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

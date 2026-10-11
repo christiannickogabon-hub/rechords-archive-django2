@@ -1,0 +1,57 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Authentication required — Municipality of Carigara</title>
+<link rel="icon" type="image/png" href="{% static 'images/carigara-seal.png' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ asset_version }}">
+</head>
+<body class="auth-body">
+{% include "_icons.html" %}
+<div class="auth-spinner" hidden aria-live="polite" aria-label="Checking your code">
+  <span class="auth-spinner-ring"></span>
+</div>
+
+<div class="signin">
+  <div class="split split--verify">
+    <div class="panel">
+      <div class="mark">
+        Check your email
+        <span>
+          A one-time code was sent to <strong>{{ masked_email }}</strong> for
+          <strong>{{ pending_user.username }}</strong>. It expires in {{ code_minutes }} minutes.
+        </span>
+      </div>
+
+      {% if messages %}
+        <ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      <form method="post" style="margin-top:1.2rem">
+        {% csrf_token %}
+        {% for field in form %}{% include "form_field.html" %}{% endfor %}
+        <button class="btn btn--slide" type="submit">
+          <span>Verify and sign in</span>
+          <svg class="icon"><use href="#icon-arrow-right"/></svg>
+        </button>
+      </form>
+
+      <form method="post" class="resend-form" data-no-loading>
+        {% csrf_token %}
+        <button class="resend-btn" type="submit" name="resend" value="1">Send another code</button>
+      </form>
+
+      <p class="helptext" style="margin-top:1.1rem">
+        <a href="{% url 'accounts:login' %}">Cancel and sign in as someone else</a>
+      </p>
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/login-transition.js' %}?v={{ asset_version }}" defer></script>
+<script src="{% static 'js/loading.js' %}?v={{ asset_version }}" defer></script>
+</body>
+</html>

@@ -1,28 +1,136 @@
 {% extends "base.html" %}
 {% block title %}My profile{% endblock %}
 {% block content %}
-<div class="page-head" style="justify-content:center; text-align:center;"><div><div class="eyebrow">Your account</div><h1>My profile</h1></div></div>
 
-<div class="card" style="max-width:760px; margin:0 auto; padding:2rem 2.2rem;">
-  <div style="display:flex; align-items:center; justify-content:center; gap:1.4rem; margin-bottom:1.8rem;">
-    {% if user.avatar %}
-      <img class="avatar avatar-lg" style="width:128px; height:128px;" src="{{ user.avatar.url }}" alt="{{ user }}">
+<section class="profile-hero">
+  <div class="profile-hero-band"></div>
+  <div class="profile-hero-body">
+    {% if user.avatar_url %}
+      <img class="avatar profile-avatar" src="{{ user.avatar_url }}" alt="{{ user }}">
     {% else %}
-      <div class="avatar avatar-placeholder avatar-lg" style="width:128px; height:128px; font-size:2.4rem;">{{ user.initials }}</div>
+      <div class="avatar avatar-placeholder profile-avatar">{{ user.initials }}</div>
     {% endif %}
-    <div style="text-align:left;">
-      <div style="font-weight:600; font-size:1.45rem;">{{ user.get_full_name|default:user.username }}</div>
-      <div class="helptext" style="margin-top:.25rem; font-size:1rem;">{{ user.role_label }}{% if user.office %} · {{ user.office }}{% endif %}</div>
+
+    <div class="profile-hero-text">
+      <div class="eyebrow">Your account</div>
+      <h1>{{ user.get_full_name|default:user.username }}</h1>
+      <div class="profile-hero-meta">
+        {% if user.is_super_admin %}<span class="chip chip--warn">{{ user.role_label }}</span>
+        {% elif user.is_archive_admin %}<span class="chip chip--stop">{{ user.role_label }}</span>
+        {% else %}<span class="chip">{{ user.role_label }}</span>{% endif %}
+        {% if user.office %}<span>{{ user.office }}</span>{% endif %}
+        {% if user.position %}<span>{{ user.position }}</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="profile-hero-actions">
+      <a class="btn btn--quiet" href="{% url 'accounts:password_change' %}">
+        <svg class="icon"><use href="#icon-lock"/></svg>Change password
+      </a>
     </div>
   </div>
+</section>
 
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {% for field in form %}{% include "form_field.html" %}{% endfor %}
-    <div class="btn-row" style="justify-content:center;">
-      <button class="btn" type="submit"><svg class="icon"><use href="#icon-check"/></svg>Save changes</button>
-      <a class="btn btn--quiet" href="{% url 'accounts:password_change' %}"><svg class="icon"><use href="#icon-lock"/></svg>Change password</a>
-    </div>
-  </form>
+<div class="profile-grid">
+  <section class="card">
+    <h2 class="card-title">Your details</h2>
+    <p class="card-note">Office, position and role are set by an administrator.</p>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      <div class="grid grid-2">
+        <div>{% with field=form.first_name %}{% include "form_field.html" %}{% endwith %}</div>
+        <div>{% with field=form.last_name %}{% include "form_field.html" %}{% endwith %}</div>
+      </div>
+      {% with field=form.email %}{% include "form_field.html" %}{% endwith %}
+      {% with field=form.contact_number %}{% include "form_field.html" %}{% endwith %}
+
+      <div class="field photo-field">
+        <label for="{{ form.avatar.id_for_label }}">Profile picture</label>
+        <div class="photo-row">
+          {% if user.avatar_url %}
+            <img class="avatar avatar-sm photo-current" src="{{ user.avatar_url }}" alt="">
+          {% else %}
+            <div class="avatar avatar-placeholder avatar-sm photo-current">{{ user.initials }}</div>
+          {% endif %}
+          <div class="photo-input">
+            {{ form.avatar }}
+            <div class="helptext">JPG, PNG or WEBP, up to 2 MB.</div>
+          </div>
+        </div>
+        {{ form.avatar.errors }}
+      </div>
+
+      <div class="btn-row" style="margin-top:1.2rem">
+        <button class="btn" type="submit"><svg class="icon"><use href="#icon-check"/></svg>Save changes</button>
+      </div>
+    </form>
+  </section>
+
+  <aside class="profile-side">
+    <section class="card">
+      <h2 class="card-title">On file</h2>
+      <ul class="fact-list">
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-user"/></svg>
+          <span class="fact-label">Username</span>
+          <span class="fact-value ctrl">{{ user.username }}</span>
+        </li>
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-building-2"/></svg>
+          <span class="fact-label">Office</span>
+          <span class="fact-value">{{ user.office|default:"Not set" }}</span>
+        </li>
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-clipboard"/></svg>
+          <span class="fact-label">Position</span>
+          <span class="fact-value">{{ user.position|default:"Not set" }}</span>
+        </li>
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-send"/></svg>
+          <span class="fact-label">Email</span>
+          <span class="fact-value">{{ user.email|default:"Not set" }}</span>
+        </li>
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-bell"/></svg>
+          <span class="fact-label">Contact</span>
+          <span class="fact-value ctrl">{{ user.contact_number|default:"Not set" }}</span>
+        </li>
+      </ul>
+      {% if not user.email %}
+      <p class="helptext fact-note">
+        Without an email address you will not receive notices or sign-in codes.
+      </p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Sign-in</h2>
+      <ul class="fact-list">
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-clock"/></svg>
+          <span class="fact-label">Last sign-in</span>
+          <span class="fact-value">{{ user.last_login|date:"d M Y, H:i"|default:"First visit" }}</span>
+        </li>
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-archive"/></svg>
+          <span class="fact-label">Member since</span>
+          <span class="fact-value">{{ user.date_joined|date:"d M Y" }}</span>
+        </li>
+        <li>
+          <svg class="icon icon-sm"><use href="#icon-shield"/></svg>
+          <span class="fact-label">Second step</span>
+          <span class="fact-value">
+            {% if user.needs_second_factor %}<span class="chip chip--ok">Emailed code</span>
+            {% else %}<span class="chip">Password only</span>{% endif %}
+          </span>
+        </li>
+      </ul>
+    </section>
+  </aside>
 </div>
 {% endblock %}

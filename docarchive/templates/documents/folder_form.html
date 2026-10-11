@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Edit {{ form.instance.label }}{% else %}Add a folder{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Folders</div>
+    <h1>{% if form.instance.pk %}Edit {{ form.instance.label }}{% else %}Add a folder{% endif %}</h1>
+  </div>
+  <div class="btn-row">
+    <a class="btn btn--quiet" href="{% url 'documents:folder_list' %}">
+      <svg class="icon"><use href="#icon-arrow-left"/></svg>Back to folders
+    </a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <form class="card" method="post">
+    {% csrf_token %}
+    <h2 class="card-title">The series</h2>
+    <p class="card-note">A folder gets its own card on the Overview and its own run of numbers.</p>
+    {% for field in form %}{% include "form_field.html" %}{% endfor %}
+    <div class="btn-row" style="margin-top:1rem">
+      <button class="btn" type="submit">
+        <svg class="icon"><use href="#icon-check"/></svg>{% if form.instance.pk %}Save changes{% else %}Add the folder{% endif %}
+      </button>
+      <a class="btn btn--quiet" href="{% url 'documents:folder_list' %}">
+        <svg class="icon"><use href="#icon-x"/></svg>Cancel
+      </a>
+    </div>
+  </form>
+
+  <div class="card">
+    <h2 class="card-title">What the code does</h2>
+    <p class="card-note">
+      The code is stored on every record filed under the folder, so it is fixed once
+      the folder exists. Keep it short: RES, ORD, CONT.
+    </p>
+    <dl class="profile-facts">
+      <dt>Example</dt><dd class="ctrl">RESOLUTION No. 001, s. {% now "Y" %}</dd>
+      <dt>Numbering</dt><dd>Starts at 001 each series year</dd>
+      <dt>Shows on</dt><dd>Overview, search filters, filing choices</dd>
+    </dl>
+  </div>
+</div>
+{% endblock %}

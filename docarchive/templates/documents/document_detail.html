@@ -8,8 +8,8 @@
   </div>
   {% if user.is_archive_admin %}
   <div class="btn-row">
-    <a class="btn btn--quiet" href="{% url 'documents:document_update' document.pk %}"><svg class="icon"><use href="#icon-edit"/></svg>Edit</a>
-    <a class="btn btn--danger" href="{% url 'documents:document_delete' document.pk %}"><svg class="icon"><use href="#icon-trash"/></svg>Remove</a>
+    <a class="btn btn--edit btn--slide" href="{% url 'documents:document_update' document.pk %}"><span>Edit</span><svg class="icon"><use href="#icon-pencil"/></svg></a>
+    <a class="btn btn--danger" href="{% url 'documents:document_delete' document.pk %}"><svg class="icon"><use href="#icon-trash-2"/></svg>Remove</a>
   </div>
   {% endif %}
 </div>
@@ -19,9 +19,9 @@
     <div class="card">
       <div class="eyebrow">Record details</div>
       <dl class="meta">
-        <dt>Type</dt><dd>{{ document.get_doc_type_display }}</dd>
+        <dt>Type</dt><dd>{{ document.type_label }}</dd>
         <dt>Series / number</dt><dd class="ctrl">s. {{ document.series_year }} · No. {{ document.number }}</dd>
-        {% if document.indorsement_level %}<dt>Indorsement</dt><dd>{{ document.indorsement_level }}</dd>{% endif %}
+        {% if document.indorsement_level %}<dt>Endorsement</dt><dd>{{ document.indorsement_level }}</dd>{% endif %}
         <dt>Date issued</dt><dd>{{ document.date_issued|date:"d F Y" }}</dd>
         {% if document.effectivity_date %}<dt>Effective</dt><dd>{{ document.effectivity_date|date:"d F Y" }}</dd>{% endif %}
         <dt>Originating office</dt><dd>{{ document.originating_office|default:"—" }}</dd>
@@ -60,10 +60,21 @@
       <div class="eyebrow">Scanned copy</div>
       {% if document.file %}
         <p class="ctrl">{{ document.file_extension }}</p>
-        {% if document.classification == "PUBLIC" %}
-        <a class="btn" href="{% url 'documents:document_download' document.pk %}" target="_blank"><svg class="icon"><use href="#icon-download"/></svg>View</a>
+        <div class="btn-row">
+          <a class="btn btn--view btn--slide" href="{% url 'documents:document_viewer' document.pk %}"><span>View</span><svg class="icon"><use href="#icon-eye"/></svg></a>
+          <a class="btn btn--download" href="{% url 'documents:document_download' document.pk %}"><svg class="icon"><use href="#icon-download"/></svg>Download PDF</a>
+        </div>
+        {% if can_certify_file %}
+        <p class="helptext" style="margin-top:.5rem">The downloaded PDF carries the certified true copy stamp.</p>
         {% else %}
-        <a class="btn" href="{% url 'documents:document_download' document.pk %}"><svg class="icon"><use href="#icon-download"/></svg>Download</a>
+        <div class="alert alert--warn" style="margin-top:.6rem">
+          <svg class="icon"><use href="#icon-lock"/></svg>
+          <div>
+            <strong>This file cannot be certified</strong>
+            <p>It downloads in its original format. Attach a PDF or a scan of the signed
+               document so downloads carry the certified true copy stamp.</p>
+          </div>
+        </div>
         {% endif %}
       {% else %}
         <p class="helptext">No scan on file.{% if user.is_archive_admin %} Edit this record to attach one.{% endif %}</p>
@@ -73,8 +84,12 @@
     <div class="card" style="margin-top:1rem">
       <div class="eyebrow">Enclosures</div>
       {% for a in document.attachments.all %}
-        <div style="padding:.35rem 0; border-bottom:1px solid var(--rule)">
-          <a href="{% url 'documents:attachment_download' a.pk %}"><svg class="icon icon-sm"><use href="#icon-paperclip"/></svg> {{ a.label }}</a>
+        <div class="enclosure-row">
+          <a class="dl-link" href="{% url 'documents:attachment_download' a.pk %}">
+            <svg class="icon icon-sm"><use href="#icon-paperclip"/></svg>
+            <span>{{ a.label }}</span>
+            <svg class="icon icon-sm dl-icon"><use href="#icon-download"/></svg>
+          </a>
         </div>
       {% empty %}
         <p class="helptext">None filed.</p>
@@ -84,7 +99,7 @@
       <form method="post" action="{% url 'documents:attachment_add' document.pk %}" enctype="multipart/form-data" style="margin-top:.8rem">
         {% csrf_token %}
         {% for field in attachment_form %}{% include "form_field.html" %}{% endfor %}
-        <button class="btn btn--quiet" type="submit"><svg class="icon"><use href="#icon-paperclip"/></svg>Add enclosure</button>
+        <button class="btn btn--quiet" type="submit"><svg class="icon"><use href="#icon-upload"/></svg>Add enclosure</button>
       </form>
       {% endif %}
     </div>

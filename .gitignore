@@ -1,3 +1,9 @@
 .venv/
 __pycache__/
 *.py[cod]
+
+# a separate repository that happens to sit in this folder
+capstone2/
+
+# machine-specific dev server config
+.claude/

@@ -31,7 +31,6 @@
   </div>
   {% if user.is_archive_admin %}
     <div class="btn-row">
-      <a class="btn" href="{% url 'documents:document_create' %}"><svg class="icon"><use href="#icon-file-plus"/></svg>File a document</a>
       <a class="btn btn--quiet" href="{% url 'documents:export_csv' %}"><svg class="icon"><use href="#icon-download"/></svg>Export index (CSV)</a>
     </div>
   {% endif %}
@@ -39,14 +38,24 @@
 
 <div class="grid grid-4">
   {% for card in type_cards %}
-  <a class="card type-card" href="{% url 'documents:document_list' %}?doc_type={{ card.code }}">
-    <svg class="icon icon-lg"><use href="#{{ card.icon }}"/></svg>
+  <a class="card type-card tone-{{ card.tone }}"
+     href="{% url 'documents:document_folder' card.code %}"
+     aria-label="{{ card.label }}: {{ card.total }} record{{ card.total|pluralize }} on file. Open the folder.">
+    <span class="type-card-icon"><svg class="icon icon-lg"><use href="#{{ card.icon }}"/></svg></span>
     <div class="eyebrow">{{ card.label }}</div>
-    <div class="count">{{ card.total }}</div>
-    <div class="sub">{{ card.this_year }} in series {{ this_year }}</div>
-    <div class="sub ctrl" style="margin-top:.4rem">last no. {{ card.last_number }}</div>
+    <div class="count">{{ card.total }}<span>record{{ card.total|pluralize }}</span></div>
+    <span class="type-card-go">Open the folder<svg class="icon icon-sm"><use href="#icon-arrow-right"/></svg></span>
   </a>
   {% endfor %}
+  {% if user.is_archive_admin %}
+  <a class="card type-card type-card--add" href="{% url 'documents:folder_create' %}"
+     aria-label="Add a folder for another kind of document">
+    <span class="type-card-icon"><svg class="icon icon-lg"><use href="#icon-plus"/></svg></span>
+    <div class="eyebrow">Add a folder</div>
+    <div class="add-note">For another kind of document</div>
+    <span class="type-card-go">Open a series<svg class="icon icon-sm"><use href="#icon-arrow-right"/></svg></span>
+  </a>
+  {% endif %}
 </div>
 
 <h2 style="margin-top:2rem">Recently filed</h2>
@@ -55,7 +64,7 @@
   <tbody>
   {% for doc in latest_filed %}
     <tr>
-      <td class="ctrl">{{ doc.control_number }}</td>
+      <td class="ctrl"><span class="chip chip--series tone-{{ doc.tone }}">{{ doc.control_number }}</span></td>
       <td class="subject"><a href="{{ doc.get_absolute_url }}">{{ doc.subject }}</a></td>
       <td class="ctrl">{{ doc.date_issued|date:"d M Y" }}</td>
       <td>

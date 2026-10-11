@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Account requests{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Super administrator</div><h1>Account requests</h1></div></div>
+<p class="helptext" style="margin-bottom:1.1rem">
+  People who signed up and are waiting to be let in. Check the role they asked for, then approve with the role you want them to have.
+</p>
+
+<table class="registry">
+  <thead>
+    <tr><th>Name</th><th>Username</th><th>Office</th><th>Role asked for</th><th>Requested</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for applicant in requests %}
+    <tr>
+      <td class="subject">
+        {{ applicant.get_full_name|default:"—" }}
+        {% if applicant.email %}<div class="helptext">{{ applicant.email }}</div>{% endif %}
+      </td>
+      <td class="ctrl">{{ applicant.username }}</td>
+      <td>{{ applicant.office|default:"—" }}{% if applicant.position %}<div class="helptext">{{ applicant.position }}</div>{% endif %}</td>
+      <td>
+        {% if applicant.requested_role == 'ADMIN' %}<span class="chip chip--stop">Administrator</span>
+        {% else %}<span class="chip">Staff user</span>{% endif %}
+      </td>
+      <td class="ctrl">{{ applicant.date_joined|date:"d M Y, H:i" }}</td>
+      <td style="white-space:nowrap">
+        <form method="post" action="{% url 'accounts:account_request_decision' applicant.pk 'approve' %}" class="approve-form">
+          {% csrf_token %}
+          <label class="sr-only" for="role-{{ applicant.pk }}">Approve as</label>
+          <select name="role" id="role-{{ applicant.pk }}" class="approve-role">
+            <option value="USER" {% if applicant.requested_role != 'ADMIN' %}selected{% endif %}>as Staff user</option>
+            <option value="ADMIN" {% if applicant.requested_role == 'ADMIN' %}selected{% endif %}>as Administrator</option>
+          </select>
+          <button class="btn" type="submit"><svg class="icon icon-sm"><use href="#icon-check"/></svg>Approve</button>
+        </form>
+        <form method="post" action="{% url 'accounts:account_request_decision' applicant.pk 'reject' %}" style="display:inline">
+          {% csrf_token %}
+          <button class="btn btn--quiet" type="submit"><svg class="icon icon-sm"><use href="#icon-x"/></svg>Reject</button>
+        </form>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="empty">
+      <h3>No requests waiting</h3>
+      <p>New sign-ups will appear here for your decision.</p>
+    </td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if decided %}
+<h2 style="margin-top:2rem">Recently rejected</h2>
+<table class="registry">
+  <thead><tr><th>Name</th><th>Username</th><th>Office</th><th>Decided</th></tr></thead>
+  <tbody>
+  {% for applicant in decided %}
+    <tr>
+      <td class="subject">{{ applicant.get_full_name|default:"—" }}</td>
+      <td class="ctrl">{{ applicant.username }}</td>
+      <td>{{ applicant.office|default:"—" }}</td>
+      <td class="ctrl">{{ applicant.approved_at|date:"d M Y, H:i"|default:"—" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

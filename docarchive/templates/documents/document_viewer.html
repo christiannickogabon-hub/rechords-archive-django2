@@ -1,0 +1,37 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ document.control_number }} — scanned copy</title>
+<link rel="icon" type="image/png" href="{% static 'images/carigara-seal.png' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/app.css' %}?v={{ asset_version }}">
+</head>
+<body class="viewer-body">
+{% include "_icons.html" %}
+<div class="viewer">
+  <div class="viewer-actions">
+    <a class="viewer-btn viewer-btn--download" href="{% url 'documents:document_download' document.pk %}"
+       title="Download certified PDF" aria-label="Download certified PDF">
+      <svg class="icon"><use href="#icon-download"/></svg>
+    </a>
+    <a class="viewer-btn viewer-btn--exit" href="{{ document.get_absolute_url }}"
+       title="Exit" aria-label="Exit">
+      <svg class="icon"><use href="#icon-x"/></svg>
+    </a>
+  </div>
+
+  <main class="viewer-stage">
+    {% if document.file_extension == "PDF" %}
+      <iframe class="viewer-frame" src="{% url 'documents:document_download' document.pk %}?view=1" title="{{ document.control_number }}"></iframe>
+    {% else %}
+      <img class="viewer-image" src="{% url 'documents:document_download' document.pk %}?view=1" alt="{{ document.control_number }}">
+    {% endif %}
+  </main>
+</div>
+<script src="{% static 'js/loading.js' %}?v={{ asset_version }}" defer></script>
+</body>
+</html>
